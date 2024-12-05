@@ -21,8 +21,8 @@ flags.DEFINE_float('lr', 1e-4, 'Learning Rate')
 flags.DEFINE_float('step_lr', 2e-3, 'Step LR for sampling')
 flags.DEFINE_integer('num_epochs', 3, 'Number of Epochs')
 flags.DEFINE_integer('seed', 2, 'Random seed')
-flags.DEFINE_string('output_dir', 'runs/mnist-fc/', 'Output Directory')
-flags.DEFINE_string('model_type', 'simple_fc', 'Network to use')
+
+
 flags.DEFINE_string('output_dir', 'runs/mnist-unet/', 'Output Directory')
 flags.DEFINE_string('model_type', 'unet', 'Network to use')
 flags.DEFINE_float('sigma_begin', 2, 'Largest sigma value')
