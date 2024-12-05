@@ -79,26 +79,18 @@ class UNet(nn.Module):
         )
 
     def forward(self, inputs):
-        batch_size = inputs.shape[0]
-        inputs = inputs.view(batch_size, 1, 32, 32)  # Reshape to (batch_size, 1, 32, 32)
-
-        # Downsampling path
-        x1 = self.enc1(inputs)  # (batch_size, 64, 32, 32)
-        x2 = self.enc2(F.max_pool2d(x1, kernel_size=2))  # (batch_size, 128, 16, 16)
-        x3 = self.enc3(F.max_pool2d(x2, kernel_size=2))  # (batch_size, 256, 8, 8)
+        device = inputs.device  # Get the device of the input
+        batch = inputs.shape[0]
+        inputs = inputs.reshape(batch, 1, 32, 32).to(device)  # Ensure inputs are on the same device
+    
+        # Ensure all layers are on the same device
+        self.conv_block = self.conv_block.to(device)
+        self.up1 = self.up1.to(device)
+        self.up2 = self.up2.to(device)
         
-        # Bottleneck
-        x4 = self.bottleneck(F.max_pool2d(x3, kernel_size=2))  # (batch_size, 512, 4, 4)
+        outputs = self.conv_block(inputs)  # Forward pass through UNet layers
+        outputs = self.up1(outputs)
+        outputs = self.up2(outputs)
         
-        # Upsampling path
-        x = self.up3(x4)  # (batch_size, 256, 8, 8)
-        x = torch.cat([x, x3], dim=1)  # Skip connection (batch_size, 512, 8, 8)
-        x = self.up2(self.conv_block(512, 256)(x))  # (batch_size, 128, 16, 16)
-        x = torch.cat([x, x2], dim=1)  # Skip connection (batch_size, 256, 16, 16)
-        x = self.up1(self.conv_block(256, 128)(x))  # (batch_size, 64, 32, 32)
-        x = torch.cat([x, x1], dim=1)  # Skip connection (batch_size, 128, 32, 32)
-
-        # Final output layer
-        outputs = self.final_conv(self.conv_block(128, 64)(x))  # (batch_size, 1, 32, 32)
-
-        return outputs.view(batch_size, -1)  # Flatten to match the input shape (batch_size, 1024)
+        outputs = outputs.reshape(batch, -1)
+        return outputs
