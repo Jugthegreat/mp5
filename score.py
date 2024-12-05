@@ -112,15 +112,10 @@ class ScoreNet(nn.Module):
 
 
     def get_score(self, x, sigma):
-        """
-        Calculate the score of the input images
-        :param x: images of (N, D)
-        :param sigma: the sigma used to perturb the images, either a float or a tensor of shape (N, 1)
-        :return: the score of the input images, of shape (N, D)
-        """
-        # In NCSNv2, the score is divided by sigma (i.e., noise-conditioned)
-        out = self.scorenet(x) / sigma
-        return out
+    sigma = sigma.to(x.device)  # Ensure sigma is on the same device
+    out = self.scorenet(x) / sigma
+    return out
+
 
     def get_loss(self, x):
         """
