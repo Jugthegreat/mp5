@@ -7,7 +7,6 @@ from torchvision import datasets, transforms, utils as tvutils
 from PIL import Image
 from torch.utils.data import DataLoader
 import numpy as np
-import matplotlib.pyplot as plt
 from tensorboardX import SummaryWriter
 import logging
 import time
