@@ -49,22 +49,22 @@ class ScoreNet(nn.Module):
         Perturb images with Gaussian noise.
         You should randomly choose a sigma from `self.sigmas` for each image in the batch.
         Use that sigma as the standard deviation of the Gaussian noise added to the image.
-        :param batch: batch of images of shape (N, D)
-        :return: noises added to images (N, D)
-                 sigmas used to perturb the images (N, 1)
+        :param batch: batch of images of shape (N, C, H, W)
+        :return: noises added to images (N, C, H, W)
+                 sigmas used to perturb the images (N, 1, 1, 1)
         """
-        batch_size = batch.size(0)
+        batch_size = batch.size(0)  # Number of images in the batch
         device = batch.device
     
         # Randomly select a sigma for each sample in the batch
         indices = torch.randint(low=0, high=len(self.sigmas), size=(batch_size,), device=device)
-        used_sigmas = self.sigmas[indices].view(batch_size, 1)  # Shape: (N, 1)
+        used_sigmas = self.sigmas[indices].view(batch_size, 1, 1, 1)  # Reshape for broadcasting
     
         # Generate Gaussian noise with the selected sigmas
-        noise = torch.randn_like(batch) * used_sigmas  # Shape: (N, D)
+        noise = torch.randn_like(batch) * used_sigmas  # Broadcasting ensures shape compatibility
     
-        # Return the added noise and the used sigmas
         return noise, used_sigmas
+
 
 
     @torch.no_grad()
