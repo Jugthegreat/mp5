@@ -11,7 +11,7 @@ import logging
 from io import BytesIO
 
 from score import ScoreNet
-from networks import UNet, SimpleEncoder, SimpleDecoder 
+from networks import UNet, SimpleEncoder, SimpleDecoder
 from absl import app, flags
 
 # Define flags
@@ -39,15 +39,15 @@ def setup_logging():
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(log_formatter)
     logging.getLogger().handlers = []
-    if not len(logging.getLogger().handlers): 
+    if not len(logging.getLogger().handlers):
         logging.getLogger().addHandler(console_handler)
     logging.getLogger().setLevel(logging.INFO)
 
 def logger(tag, value, global_step):
     if tag == '':
-       logging.info('')
+        logging.info('')
     else:
-       logging.info(f'  {tag:>8s} [{global_step:07d}]: {value:5f}')
+        logging.info(f'  {tag:>8s} [{global_step:07d}]: {value:5f}')
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters())
@@ -94,7 +94,8 @@ def train_scorenet(_):
     # Training loop
     for epoch in range(1, FLAGS.num_epochs + 1):
         for batch_idx, (data, _) in enumerate(dataloader):
-            data = data.reshape(data.shape[0], -1).to(device)  # Flatten MNIST images and move to device
+            # Ensure data retains its original shape and move to device
+            data = data.to(device)  # [batch_size, channels=1, height=32, width=32]
 
             optimizer.zero_grad()
             loss = scorenet.get_loss(data)  # Compute score-matching loss
@@ -114,8 +115,10 @@ def train_scorenet(_):
             if iterations % FLAGS.sample_every == 0:
                 scorenet.eval()
                 with torch.no_grad():
-                    X_gen = scorenet.sample(64, 1024, step_lr=FLAGS.step_lr)[-1, -1].view(-1, 1, 32, 32)
+                    # Update sampling to use correct size
+                    X_gen = scorenet.sample(64, 32 * 32, step_lr=FLAGS.step_lr)[-1, -1].view(-1, 1, 32, 32)
                     
+                    # Save generated images
                     samples_image = BytesIO()
                     tvutils.save_image(X_gen, samples_image, 'png')
                     samples_image = Image.open(samples_image)
@@ -123,6 +126,7 @@ def train_scorenet(_):
                     samples_image.save(file_name)
                     writer.add_image('samples', np.transpose(np.array(samples_image), [2, 0, 1]), iterations)
 
+                    # Save ground truth images
                     X_gt = data.view(-1, 1, 32, 32)[:64]
                     gt_image = BytesIO()
                     tvutils.save_image(X_gt, gt_image, 'png')
