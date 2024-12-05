@@ -112,9 +112,9 @@ class ScoreNet(nn.Module):
 
 
     def get_score(self, x, sigma):
-    sigma = sigma.to(x.device)  # Ensure sigma is on the same device
-    out = self.scorenet(x) / sigma
-    return out
+        sigma = sigma.to(x.device)  # Ensure sigma is on the same device
+        out = self.scorenet(x) / sigma
+        return out
 
 
     def get_loss(self, x):
