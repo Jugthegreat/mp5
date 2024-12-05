@@ -86,4 +86,3 @@ class VAE(nn.Module):
         z = torch.randn(batch_size, self.decoder.latent_size, device=device)
         samples = self.decode(z)
         return samples
-
