@@ -41,56 +41,26 @@ class SimpleDecoder(nn.Module):
 
 class UNet(nn.Module):
     def __init__(self):
-        super().__init__()
-        
-        # Downsampling path
-        self.enc1 = self.conv_block(1, 64)   # Input channel is 1 for grayscale MNIST
-        self.enc2 = self.conv_block(64, 128)
-        self.enc3 = self.conv_block(128, 256)
-        
-        # Bottleneck
-        self.bottleneck = self.conv_block(256, 512)
-        
-        # Upsampling path
-        self.up3 = self.upconv_block(512, 256)
-        self.up2 = self.upconv_block(256, 128)
-        self.up1 = self.upconv_block(128, 64)
-        
-        # Final output layer
-        self.final_conv = nn.Conv2d(64, 1, kernel_size=1)  # Output channel is 1 for grayscale MNIST
+        super(UNet, self).__init__()
+        # Define the layers of the UNet
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1)  # Input -> 64 channels
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
+        self.conv3 = nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1)
 
-    def conv_block(self, in_channels, out_channels):
-        """A convolutional block with Conv2D -> ReLU -> BatchNorm."""
-        return nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
-            nn.BatchNorm2d(out_channels),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
-            nn.BatchNorm2d(out_channels)
-        )
+        self.up1 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
+        self.up2 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
+        self.final_conv = nn.Conv2d(64, 1, kernel_size=3, stride=1, padding=1)  # Back to 1 channel
 
-    def upconv_block(self, in_channels, out_channels):
-        """An upsampling block with ConvTranspose2D -> ReLU -> BatchNorm."""
-        return nn.Sequential(
-            nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2),
-            nn.ReLU(inplace=True),
-            nn.BatchNorm2d(out_channels)
-        )
+        self.relu = nn.ReLU()
 
-    def forward(self, inputs):
-        device = inputs.device  # Get the device of the input
-        batch = inputs.shape[0]
-        inputs = inputs.reshape(batch, 1, 32, 32).to(device)  # Ensure inputs are on the same device
-    
-        # Ensure all layers are on the same device
-        self.conv_block = self.conv_block.to(device)
-        self.up1 = self.up1.to(device)
-        self.up2 = self.up2.to(device)
-        
-        outputs = self.conv_block(inputs)  # Forward pass through UNet layers
-        outputs = self.up1(outputs)
-        outputs = self.up2(outputs)
-        
-        outputs = outputs.reshape(batch, -1)
-        return outputs
+    def forward(self, x):
+        # Pass through the layers of the UNet
+        x1 = self.relu(self.conv1(x))  # Downsampling
+        x2 = self.relu(self.conv2(x1))
+        x3 = self.relu(self.conv3(x2))
+
+        x = self.relu(self.up1(x3))  # Upsampling
+        x = self.relu(self.up2(x))
+        x = self.final_conv(x)
+
+        return x
