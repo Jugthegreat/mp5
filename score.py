@@ -121,7 +121,7 @@ class ScoreNet(nn.Module):
         """
         Calculate the score loss.
         The loss should be averaged over the batch dimension and the image dimension.
-        :param x: images of (N, D)
+        :param x: images of shape (N, C, H, W)
         :return: score loss, a scalar tensor
         """
         # Obtain noise and perturbed data
@@ -134,10 +134,14 @@ class ScoreNet(nn.Module):
         # Compute the target score: - (noise / sigma^2)
         target_scores = -noise / (sigmas ** 2)
     
+        # Reshape `sigmas` for broadcasting
+        sigmas = sigmas.view(sigmas.size(0), 1, 1, 1)  # [batch_size, 1, 1, 1]
+    
         # Compute the score loss
         loss = 0.5 * torch.mean(((estimated_scores - target_scores) ** 2) * (sigmas ** 2))
     
         return loss
+
 
 
     def forward(self, x):
